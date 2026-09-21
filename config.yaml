@@ -1,0 +1,13 @@
+xpaths: 
+  load_more: "//button[@id='loadMore']" 
+  accepter_button: "//button[@id='popin_tc_privacy_button']" 
+  
+  items_in: "//article[@tabindex='-1']/div" 
+  url: ".//a" 
+  title: ".//p[@class='product-name']" 
+  reference: ".//p[@class='product-reference']" 
+  price: ".//p[@class='product-price']" 
+  tag: ".//span[@class='watch-tags']" 
+  edition: ".//span[@class='pan-prod-ref-marketing-tag']" 
+  comment: ".//p[@class='base-scr-item-watch-product-tag']" 
+  total_articles: "//label[@class='pan-watch-finder-header-product-count']/span"
