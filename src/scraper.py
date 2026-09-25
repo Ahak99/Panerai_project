@@ -4,7 +4,7 @@ import yaml
 import random
 import sys
 import pandas as pd
-from datetime import date
+import datetime
 from dotenv import load_dotenv
 
 from utils import handle_cookie_consent, scroll_and_load_all, extract_watch_data, create_folder, init_webdriver
@@ -31,6 +31,8 @@ if __name__ == "__main__":
         "Luminor Due": "luminor-due"
     }
 
+    today_name = datetime.datetime.now().strftime("%d-%m-%Y")
+
     # Load XPaths from config
     with open("config.yaml", "r") as file:
         config = yaml.safe_load(file)
@@ -56,7 +58,7 @@ if __name__ == "__main__":
             continue
 
         # Create directory named with current date (day-month-year)
-        folder_path = os.path.join("Data", date.today().strftime("%d-%m-%Y"), country)
+        folder_path = os.path.join("Data", today_name, country)
         create_folder(folder_path)
 
         # Initialize Stealth WebDriver per country to refresh User-Agent
@@ -80,11 +82,12 @@ if __name__ == "__main__":
 
                 # Step 4: Convert to DataFrame and Save
                 df = pd.DataFrame(data)
+                df["collection"] = collection
                 df["currency"] = country_currency[country]
                 df["country"] = country
-                df["date"] = date.today().strftime("%d-%m-%Y")
+                df["date"] = today_name
 
-                file_name = f"panerai_watches_{country}_{collection}_{date.today().strftime('%d-%m-%Y')}.csv"
+                file_name = f"panerai_watches_{country}_{collection}_{today_name}.csv"
                 full_file_path = os.path.join(folder_path, file_name)
 
                 df.to_csv(full_file_path, index=False, encoding="utf-8-sig")
