@@ -4,6 +4,8 @@ cd /d "%~dp0"
 
 :START_PROCESS
 echo ====================================================
+echo [SYSTEM] Activating Virtual Environment...
+call venv\Scripts\activate.bat
 echo [SYSTEM] Starting Panerai Daily Guard...
 echo ====================================================
 
