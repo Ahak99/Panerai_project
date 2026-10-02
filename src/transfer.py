@@ -8,7 +8,7 @@ if __name__ == "__main__":
 
     # 1. Configuration
     LOCAL_DATA_ROOT = "Data"
-    VOLUME_BASE = "/Volumes/panerai_project/prod/panerai_data"
+    VOLUME_BASE = "/Volumes/panerai_project/dev/panerai_data"
     DB_TOKEN = os.getenv("DATABRICKS_TOKEN")
     DB_URL = os.getenv("DATABRICKS_URL")
 
