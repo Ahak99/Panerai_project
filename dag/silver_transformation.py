@@ -83,10 +83,10 @@ def run_silver_upsert(spark, bronze_table, silver_table, exchange_rates):
         spark.sql(f"ALTER TABLE {silver_table} SET TBLPROPERTIES ('delta.columnMapping.mode' = 'name')")
 
         spark.sql(f"""
-            MERGE WITH SCHEMA EVOLUTION INTO {SILVER_TABLE} AS target
+            MERGE WITH SCHEMA EVOLUTION INTO {silver_table} AS target
             USING silver_updates_view AS source
-            ON target.reference = source.reference 
-            AND target.country = source.country 
+            ON target.reference = source.reference
+            AND target.country = source.country
             AND target.date = source.date
             WHEN MATCHED THEN UPDATE SET *
             WHEN NOT MATCHED THEN INSERT *
@@ -96,13 +96,17 @@ def run_silver_upsert(spark, bronze_table, silver_table, exchange_rates):
 if __name__ == "__main__":
     # Databricks Job Parameters
     dbutils.widgets.text("env", "dev", "Environment")
-    dbutils.widgets.text("bronze_table", "panerai_project.dev.panerai_data_bronze_dev", "Bronze Table")
-    dbutils.widgets.text("silver_table", "panerai_project.dev.panerai_data_silver_dev", "Silver Table")
+    dbutils.widgets.text("catalog", "panerai_project", "Catalog")
+    dbutils.widgets.text("base_volume", "/Volumes/panerai_project", "Base Volume")
 
     # Get values
     env = dbutils.widgets.get("env")
-    b_table = dbutils.widgets.get("bronze_table")
-    s_table = dbutils.widgets.get("silver_table")
+    catalog = dbutils.widgets.get("catalog")
+    base_vol = dbutils.widgets.get("base_volume")
+
+    # Dynamically derive tables
+    b_table = f"{catalog}.{env}.panerai_data_bronze"
+    s_table = f"{catalog}.{env}.panerai_data_silver"
 
     exchange_rates = {
         "USD": 0.88, "JPY": 0.0056, "AED": 0.24,

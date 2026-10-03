@@ -32,16 +32,18 @@ def run_bronze_ingestion(spark, env, volume_path, bronze_table, checkpoint_path,
 if __name__ == "__main__":
     # Databricks Job Parameters
     dbutils.widgets.text("env", "dev", "Environment")
-    dbutils.widgets.text("volume_path", "/Volumes/panerai_project/dev/panerai_data", "Volume Path")
-    dbutils.widgets.text("bronze_table", "panerai_project.dev.panerai_data_bronze_dev", "Bronze Table")
-    dbutils.widgets.text("checkpoint_path", "/Volumes/panerai_project/dev/_checkpoints/bronze_ingestion", "Checkpoint Path")
-    dbutils.widgets.text("schema_location", "/Volumes/panerai_project/dev/_checkpoints/bronze_schema", "Schema Location")
+    dbutils.widgets.text("catalog", "panerai_project", "Catalog")
+    dbutils.widgets.text("base_volume", "/Volumes/panerai_project", "Base Volume")
 
     # Get values
     env = dbutils.widgets.get("env")
-    vol_path = dbutils.widgets.get("volume_path")
-    b_table = dbutils.widgets.get("bronze_table")
-    c_path = dbutils.widgets.get("checkpoint_path")
-    s_loc = dbutils.widgets.get("schema_location")
+    catalog = dbutils.widgets.get("catalog")
+    base_vol = dbutils.widgets.get("base_volume")
+
+    # Dynamically derive paths and tables
+    vol_path = f"{base_vol}/{env}/panerai_data"
+    b_table = f"{catalog}.{env}.panerai_data_bronze"
+    c_path = f"{base_vol}/{env}/_checkpoints/bronze_ingestion"
+    s_loc = f"{base_vol}/{env}/_checkpoints/bronze_schema"
 
     run_bronze_ingestion(spark, env, vol_path, b_table, c_path, s_loc)
