@@ -25,3 +25,14 @@ def run_gold_transformation(spark, env, silver_table):
     fact_p.write.format("delta").mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"panerai_project.{env}.fact_pricing")
 
     print("✅ Gold layer tables updated.")
+
+if __name__ == "__main__":
+    # Databricks Job Parameters
+    dbutils.widgets.text("env", "dev", "Environment")
+    dbutils.widgets.text("silver_table", "panerai_project.dev.panerai_data_silver_dev", "Silver Table")
+
+    # Get values
+    env = dbutils.widgets.get("env")
+    s_table = dbutils.widgets.get("silver_table")
+
+    run_gold_transformation(spark, env, s_table)

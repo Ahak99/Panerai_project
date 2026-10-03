@@ -82,13 +82,31 @@ def run_silver_upsert(spark, bronze_table, silver_table, exchange_rates):
         silver_updates.createOrReplaceTempView("silver_updates_view")
         spark.sql(f"ALTER TABLE {silver_table} SET TBLPROPERTIES ('delta.columnMapping.mode' = 'name')")
 
-        spark.sql(f\"\"\"
-        MERGE WITH SCHEMA EVOLUTION INTO {silver_table} AS target
-        USING silver_updates_view AS source
-        ON target.reference = source.reference
-           AND target.country = source.country
-           AND target.date = source.date
-        WHEN MATCHED THEN UPDATE SET *
-        WHEN NOT MATCHED THEN INSERT *
-        \"\"\")
+        spark.sql(f"""
+            MERGE WITH SCHEMA EVOLUTION INTO {SILVER_TABLE} AS target
+            USING silver_updates_view AS source
+            ON target.reference = source.reference 
+            AND target.country = source.country 
+            AND target.date = source.date
+            WHEN MATCHED THEN UPDATE SET *
+            WHEN NOT MATCHED THEN INSERT *
+            """)
         print(f"✅ Incremental merge of {silver_updates.count()} rows to {silver_table} complete.")
+
+if __name__ == "__main__":
+    # Databricks Job Parameters
+    dbutils.widgets.text("env", "dev", "Environment")
+    dbutils.widgets.text("bronze_table", "panerai_project.dev.panerai_data_bronze_dev", "Bronze Table")
+    dbutils.widgets.text("silver_table", "panerai_project.dev.panerai_data_silver_dev", "Silver Table")
+
+    # Get values
+    env = dbutils.widgets.get("env")
+    b_table = dbutils.widgets.get("bronze_table")
+    s_table = dbutils.widgets.get("silver_table")
+
+    exchange_rates = {
+        "USD": 0.88, "JPY": 0.0056, "AED": 0.24,
+        "CHF": 1.06, "GBP": 1.16, "EUR": 1.0
+    }
+
+    run_silver_upsert(spark, b_table, s_table, exchange_rates)
