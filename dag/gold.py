@@ -35,4 +35,4 @@ if __name__ == "__main__":
     env = dbutils.widgets.get("env")
     s_table = dbutils.widgets.get("silver_table")
 
-    run_gold_transformation(spark, env, s_table)
+    run_gold_transformation(spark, env, s_table) 
