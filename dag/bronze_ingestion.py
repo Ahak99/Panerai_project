@@ -43,7 +43,8 @@ if __name__ == "__main__":
     # Dynamically derive paths and tables
     vol_path = f"{base_vol}/{env}/panerai_data"
     b_table = f"{catalog}.{env}.panerai_data_bronze"
-    c_path = f"{base_vol}/{env}/_checkpoints/bronze_ingestion"
-    s_loc = f"{base_vol}/{env}/_checkpoints/bronze_schema"
+    c_path = f"{base_vol}/{env}/panerai_checkpoints/bronze_schema"
+    s_loc = f"{base_vol}/{env}/panerai_checkpoints/bronze_ingestion"
 
     run_bronze_ingestion(spark, env, vol_path, b_table, c_path, s_loc)
+    
