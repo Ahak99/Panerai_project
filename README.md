@@ -1,4 +1,4 @@
-# Panerai Scraper Project
+# Panerai Project
 
 A production-grade data pipeline designed to scrape the Panerai watch collection across multiple global markets and migrate the data into a Databricks Lakehouse environment for advanced analytics.
 
