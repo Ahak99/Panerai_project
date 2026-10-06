@@ -1,3 +1,4 @@
+import sys
 from pyspark.sql import functions as F
 from pyspark.sql import Window
 
@@ -63,14 +64,29 @@ def run_gold_transformation(spark, env, silver_table, catalog):
     """
     print(f"🚀 Starting Incremental Gold layer transformation for env: {env}")
 
-    # 1. Load Silver data
-    silver_final = spark.read.table(silver_table)
-
     # Define table names
     dim_col_table = f"{catalog}.{env}.dim_collection"
     dim_cnt_table = f"{catalog}.{env}.dim_country"
     dim_w_table = f"{catalog}.{env}.dim_watch"
     fact_p_table = f"{catalog}.{env}.fact_pricing"
+
+    # 1. Load Silver data with incremental watermark (same pattern as Silver layer)
+    if spark.catalog.tableExists(fact_p_table):
+        fact_columns = spark.table(fact_p_table).columns
+        if "ingested_at" in fact_columns:
+            max_ingested_at = spark.sql(f"SELECT MAX(ingested_at) FROM {fact_p_table}").collect()[0][0]
+            print(f"Last gold ingestion: {max_ingested_at}")
+            silver_final = spark.read.table(silver_table).filter(F.col("ingested_at") > max_ingested_at)
+        else:
+            print("fact_pricing missing ingested_at column. Processing all Silver data (full refresh).")
+            silver_final = spark.read.table(silver_table)
+    else:
+        print("Gold fact table does not exist. Processing all Silver data.")
+        silver_final = spark.read.table(silver_table)
+
+    if silver_final.count() == 0:
+        print("No new data to process in Gold layer.")
+        return
 
     # 2. Process Dimensions (SCD Type 1)
     # Dim Collection
@@ -93,8 +109,8 @@ def run_gold_transformation(spark, env, silver_table, catalog):
                               .join(spark.table(dim_cnt_table), "country") \
                               .join(spark.table(dim_w_table), "reference") \
                               .select(
-                                  "reference", "date", "price_eur", "diameter_mm",
-                                  "collection_id", "country_id", "watch_id"
+                                  "reference", "date", "price_eur", "diameter_mm", "url",
+                                  "collection_id", "country_id", "watch_id", "ingested_at"
                               ) \
                               .dropDuplicates(["reference", "date", "collection_id", "country_id"])
 
@@ -104,11 +120,14 @@ def run_gold_transformation(spark, env, silver_table, catalog):
         print(f"Initializing {fact_p_table}...")
         fact_updates.write.format("delta").mode("overwrite").saveAsTable(fact_p_table)
     else:
-        # Merge on the 4-part composite key: reference, date, collection, country
-        # Note: collection and country are implicitly handled by the surrogate IDs if we join correctly,
-        # but the user explicitly requested reference, date, collection, and country.
-        # Since surrogate IDs are 1:1 with those, we can merge on the IDs and reference/date.
+        # Ensure target has ingested_at column before MERGE (schema evolution only
+        # auto-adds columns for INSERT *, not for UPDATE SET).
+        target_cols = spark.table(fact_p_table).columns
+        if "ingested_at" not in target_cols:
+            print(f"Adding missing ingested_at column to {fact_p_table}...")
+            spark.sql(f"ALTER TABLE {fact_p_table} ADD COLUMN ingested_at TIMESTAMP")
 
+        # Merge on the 4-part composite key: reference, date, collection, country
         spark.sql(f"""
             MERGE INTO {fact_p_table} AS target
             USING fact_updates_view AS source
@@ -119,7 +138,9 @@ def run_gold_transformation(spark, env, silver_table, catalog):
             WHEN MATCHED THEN
                 UPDATE SET target.price_eur = source.price_eur,
                            target.diameter_mm = source.diameter_mm,
-                           target.watch_id = source.watch_id
+                           target.watch_id = source.watch_id,
+                           target.url = source.url,
+                           target.ingested_at = source.ingested_at
             WHEN NOT MATCHED THEN
                 INSERT *
         """)
@@ -127,16 +148,13 @@ def run_gold_transformation(spark, env, silver_table, catalog):
     print("✅ Gold layer tables updated incrementally.")
 
 if __name__ == "__main__":
-    # Databricks Job Parameters
-    dbutils.widgets.text("env", "dev", "Environment")
-    dbutils.widgets.text("catalog", "panerai_project", "Catalog")
-    dbutils.widgets.text("base_volume", "/Volumes/panerai_project", "Base Volume")
-
-    # Get values
-    env = dbutils.widgets.get("env")
-    catalog = dbutils.widgets.get("catalog")
-    base_vol = dbutils.widgets.get("base_volume")
+    # Parse key=value CLI args passed by the job (e.g. env=prod)
+    args = dict(arg.split("=", 1) for arg in sys.argv[1:])
+    env = args["env"]
+    catalog = args["catalog"]
+    base_vol = args["base_volume"]
 
     # Dynamically derive tables
     s_table = f"{catalog}.{env}.panerai_data_silver"
 
+    run_gold_transformation(spark, env, s_table, catalog)

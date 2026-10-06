@@ -147,7 +147,7 @@ def upload_daily_data_to_databricks(base_local_dir, volume_base_path, token, wor
     Includes professional terminal formatting, connection pooling, and streaming.
     """
     # 1. Folder Setup
-    today_folder_name = "30-09-2026"#datetime.datetime.now().strftime("%d-%m-%Y")
+    today_folder_name = datetime.datetime.now().strftime("%d-%m-%Y")
     local_folder_path = os.path.join(base_local_dir, today_folder_name)
 
     print("\n" + "="*60)

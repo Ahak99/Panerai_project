@@ -1,4 +1,5 @@
 import os
+import sys
 from pyspark.sql import functions as F
 
 def run_bronze_ingestion(spark, env, volume_path, bronze_table, checkpoint_path, schema_location):
@@ -30,15 +31,11 @@ def run_bronze_ingestion(spark, env, volume_path, bronze_table, checkpoint_path,
     return query_bronze
 
 if __name__ == "__main__":
-    # Databricks Job Parameters
-    dbutils.widgets.text("env", "dev", "Environment")
-    dbutils.widgets.text("catalog", "panerai_project", "Catalog")
-    dbutils.widgets.text("base_volume", "/Volumes/panerai_project", "Base Volume")
-
-    # Get values
-    env = dbutils.widgets.get("env")
-    catalog = dbutils.widgets.get("catalog")
-    base_vol = dbutils.widgets.get("base_volume")
+    # Parse key=value CLI args passed by the job (e.g. env=prod)
+    args = dict(arg.split("=", 1) for arg in sys.argv[1:])
+    env = args["env"]
+    catalog = args["catalog"]
+    base_vol = args["base_volume"]
 
     # Dynamically derive paths and tables
     vol_path = f"{base_vol}/{env}/panerai_data"
