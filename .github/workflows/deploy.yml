@@ -25,4 +25,4 @@ jobs:
           }'
 
           echo "🚀 Databricks Git Folder has been signaled to pull the latest changes from main."
-          # test
+# test
