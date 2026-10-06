@@ -1,0 +1,27 @@
+name: Databricks Repo Sync
+
+on:
+  push:
+    branches:
+      - main  # Trigger this workflow on every push to the main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Sync Databricks Git Folder
+        run: |
+          # We use the Databricks Repos API to trigger a 'pull' operation in the workspace.
+          # This tells Databricks to update the folder to the latest commit on the branch.
+
+          curl -X PATCH "${{ secrets.DATABRICKS_HOST }}/api/2.0/repos${{ secrets.REPO_PATH }}" \
+          -H "Authorization: Bearer ${{ secrets.DATABRICKS_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "branch": "main"
+          }'
+
+          echo "🚀 Databricks Git Folder has been signaled to pull the latest changes from main."

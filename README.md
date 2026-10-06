@@ -45,6 +45,10 @@ python src/transfer.py
 python src/transfer.py -c "USA,UK"
 ```
 
+### CI/CD Automation
+This project is integrated with **GitHub Actions**. Every push to the `main` branch automatically triggers a synchronization with the Databricks workspace, ensuring the Lakehouse is always running the latest version of the pipeline.
+
+
 ## 🛠️ Tech Stack
 - **Language**: Python 3.10+, PySpark
 - **Scraping**: Selenium, `undetected-chromedriver`, `fake-useragent`, `pandas`
